@@ -1,4 +1,4 @@
-from prefect import flow, task
+from prefect import Flow, task
 import requests
 
 @task
@@ -8,3 +8,12 @@ def fetch_data():
         return response,json()
     else:
         raise Exception('Failed to successfully fetch data')
+
+def data_processing_flow():
+    with Flow("DataProcessingFlow") as flow:
+        data = fetch_data
+    return flow
+
+
+flow = data_processing_flow()
+flow.run()
