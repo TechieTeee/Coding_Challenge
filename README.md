@@ -1,12 +1,12 @@
-# Coding_Challenge
-ETL pipeline with Prefect, PySpark, PyArrow and Python with json placeholder data
+# Coding Challenge
+ETL pipeline with Prefect, PySpark, PyArrow, and Python with json placeholder data
 
 ## How to Run Code
 Run `git clone https://github.com/TechieTeee/Coding_Challenge.git or download code` in your terminal.
 
 Run `cd Coding_Challenge` in your terminal.
 
-## Install all neccessary packages
+## Install all necessary packages
 Run `pip install requests pandas prefect pyspark pyarrow` in your terminal.
 
 ## Load Your Prefect Credentials ##
