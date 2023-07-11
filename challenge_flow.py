@@ -7,6 +7,7 @@ from prefect import flow
 import pyarrow.parquet as pq
 import pyarrow as pa
 import os
+from prefect.deployments import Deployment
 
 
 @task
@@ -58,7 +59,7 @@ def compress_parquet(data: pd.DataFrame, path: str) -> None:
     pq.write_table(table, path, compression=compression)
 
 
-@flow
+@flow(log_prints=True)
 def data_processing_flow():
     url = 'https://jsonplaceholder.typicode.com/posts'
     posts = extract(url)
@@ -71,6 +72,15 @@ def data_processing_flow():
     compressed_path = f'data/posts_{int(datetime.now().timestamp())}.parquet.snappy'
     compress_parquet(data=df_posts, path=compressed_path)
     load(data=df_posts, path=compressed_path)
+
+
+def deploy():
+    deployment = Deployment.build_from_flow(
+        flow=data_processing_flow,
+        name="Prefect Challenge Deployment"
+    )
+    deployment.apply()
+
 
 if __name__ == "__main__":
     data_processing_flow()
