@@ -2,7 +2,11 @@ import json
 import requests
 import pandas as pd
 from datetime import datetime
-from prefect import task, Flow
+from prefect import task
+from prefect import flow
+import pyarrow.parquet as pq
+import pyarrow as pa
+import os
 
 
 @task
@@ -40,17 +44,33 @@ def find_unique_posts(data: dict) -> list:
         if post_id not in post_ids:
             post_ids.add(post_id)
             unique_posts.append(item)
-return unique_posts
+    return unique_posts
 
 @task
 def load(data: pd.DataFrame, path: str) -> None:
     data.to_parquet(path, index=False)
 
-with Flow("DataProcessingFlow") as flow:
-    posts = extract(url='https://jsonplaceholder.typicode.com/posts')
+
+@task
+def compress_parquet(data: pd.DataFrame, path: str) -> None:
+    table = pa.Table.from_pandas(data)
+    compression = "snappy"
+    pq.write_table(table, path, compression=compression)
+
+
+@flow
+def data_processing_flow():
+    url = 'https://jsonplaceholder.typicode.com/posts'
+    posts = extract(url)
     filtered_posts = filter_missing_values(posts)
     unique_posts = find_unique_posts(filtered_posts)
-    df_posts = transform(filtered_posts)
-    load(data=df_posts, path=f'data/posts_{int(datetime.now().timestamp())}.parquet')
+    df_posts = transform(unique_posts)
+    directory = 'data'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    compressed_path = f'data/posts_{int(datetime.now().timestamp())}.parquet.snappy'
+    compress_parquet(data=df_posts, path=compressed_path)
+    load(data=df_posts, path=compressed_path)
 
-flow.run()
+if __name__ == "__main__":
+    data_processing_flow()
