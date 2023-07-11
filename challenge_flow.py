@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime
 from prefect import task
 from prefect import flow
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
 import pyarrow.parquet as pq
 import pyarrow as pa
 import os
@@ -48,8 +50,10 @@ def find_unique_posts(data: dict) -> list:
     return unique_posts
 
 @task
-def load(data: pd.DataFrame, path: str) -> None:
-    data.to_parquet(path, index=False)
+def load(data: list, path: str) -> None:
+    spark = SparkSession.builder.getOrCreate()
+    df = spark.createDataFrame(data)
+    df.write.parquet(path, mode ='overwrite')
 
 
 @task
@@ -84,3 +88,4 @@ def deploy():
 
 if __name__ == "__main__":
     data_processing_flow()
+    deploy()
